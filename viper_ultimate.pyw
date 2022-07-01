@@ -1,5 +1,6 @@
 import time
 import logging
+import os
 
 import usb.core
 import usb.util
@@ -11,12 +12,12 @@ from win10toast import ToastNotifier
 # 0x0072 = Razer Mamba Wireless Receiver (i.e., 2.4GHz)
 # 0x0073 = Razer Mamba Wireless (i.e., when plugged in as wired mouse)
 # see README.md for instruction to find the device ID for your mouse
-WIRELESS_RECEIVER = 0x0072
-WIRELESS_WIRED = 0x0073
+WIRELESS_RECEIVER = 0x007B
+WIRELESS_WIRED = 0x007A
 # 2. transaction_id.id
 # 0x3f for Razer Mamba Wireless
 # see README.md for instruction to find the correct transaction_id.id for your mouse
-TRAN_ID = b"\x3f"
+TRAN_ID = b"\xff"
 
 
 def get_mouse():
@@ -100,7 +101,7 @@ if __name__ == "__main__":
     battery = get_battery()
     logging.info(f"Battery level obtained: {battery}")
     toaster = ToastNotifier()
-    toaster.show_toast("Mamba Wireless Battery",
+    toaster.show_toast("Viper Ultimate Battery",
                        f"{battery}% Battery Left",
-                       icon_path="mamba_wireless.ico",
+                       icon_path=os.getcwd()+r"\viper_ultimate.ico",
                        duration=10)
