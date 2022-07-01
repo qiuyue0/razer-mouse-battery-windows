@@ -101,7 +101,7 @@ if __name__ == "__main__":
     battery = get_battery()
     logging.info(f"Battery level obtained: {battery}")
     toaster = ToastNotifier()
-    icon_path = os.getcwd()+r"\viper_ultimate.ico"
+    icon_path = os.path.dirname(os.path.abspath(__file__))+r"\viper_ultimate.ico"
     toaster.show_toast("Viper Ultimate Battery",
                        f"{battery}% Battery Left",
                        icon_path= icon_path,
