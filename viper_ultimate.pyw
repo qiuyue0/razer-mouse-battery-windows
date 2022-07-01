@@ -105,4 +105,4 @@ if __name__ == "__main__":
     toaster.show_toast("Viper Ultimate Battery",
                        f"{battery}% Battery Left",
                        icon_path= icon_path,
-                       duration=10)
+                       duration=120)
