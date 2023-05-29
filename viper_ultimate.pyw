@@ -65,7 +65,13 @@ def battery_msg():
     msg += bytes([crc, 0])
     return msg
 
+def wait(func):
+    for _ in range(60):
+        yield func()
+        time.sleep(1)
+    raise NoBatteryInfoFoundError
 
+@wait
 def get_battery():
     """
     Function for getting the battery level of a Razer Mamba Wireless, or other device if adapted
@@ -86,23 +92,26 @@ def get_battery():
     # needed by PyUSB
     usb.util.dispose_resources(mouse)
     # if the mouse is wireless, need to wait before getting response
-    if wireless:
-        time.sleep(0.3305)
+    time.sleep(0.3305)
     # receive response
     result = mouse.ctrl_transfer(bmRequestType=0xa1, bRequest=0x01, wValue=0x300, data_or_wLength=90, wIndex=0x00)
     usb.util.dispose_resources(mouse)
     usb.util.release_interface(mouse, 0)
     logging.info(f"Message received from the mouse: {list(result)}")
     # the raw battery level is in 0 - 255, scale it to 100 for human, correct to 2 decimal places
-    return f"{result[9] / 255 * 100:.2f}"
+    return result[9] / 255 * 100
 
+class NoBatteryInfoFoundError(Exception):
+    pass
 
 if __name__ == "__main__":
-    battery = get_battery()
-    logging.info(f"Battery level obtained: {battery}")
+    for battery in get_battery:
+        if battery:
+            break
+    logging.info(f"Battery level obtained: {battery:.2f}")
     toaster = ToastNotifier()
     icon_path = os.path.dirname(os.path.abspath(__file__))+r"\viper_ultimate.ico"
     toaster.show_toast("Viper Ultimate Battery",
-                       f"{battery}% Battery Left",
+                       f"{battery:.2f}% Battery Left",
                        icon_path= icon_path,
-                       duration=120)
+                       duration=530)
