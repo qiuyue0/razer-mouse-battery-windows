@@ -65,11 +65,15 @@ def battery_msg():
     msg += bytes([crc, 0])
     return msg
 
-def wait(func):
-    for _ in range(60):
-        yield func()
-        time.sleep(1)
-    raise NoBatteryInfoFoundError
+class wait():
+    def __init__(self,func):
+        self.func = func
+    
+    def __call__(self):
+        for _ in range(60):
+            yield self.func()
+            # time.sleep(1)
+        raise NoBatteryInfoFoundError
 
 @wait
 def get_battery():
@@ -105,7 +109,7 @@ class NoBatteryInfoFoundError(Exception):
     pass
 
 if __name__ == "__main__":
-    for battery in get_battery:
+    for battery in get_battery():
         if battery:
             break
     logging.info(f"Battery level obtained: {battery:.2f}")
