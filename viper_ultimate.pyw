@@ -29,20 +29,20 @@ def get_mouse():
     # declare backend: libusb1.0
     backend = libusb1.get_backend()
     # find the mouse by PyUSB
-    mouse = usb.core.find(idVendor=0x1532, idProduct=WIRELESS_RECEIVER, backend=backend)
+    mouse = usb.core.find(idVendor=0x1532, idProduct=WIRELESS_WIRED, backend=backend)
     # if the receiver is not found, mouse would be None
     if not mouse:
         # try finding the wired mouse
-        mouse = usb.core.find(idVendor=0x1532, idProduct=WIRELESS_WIRED, backend=backend)
+        mouse = usb.core.find(idVendor=0x1532, idProduct=WIRELESS_RECEIVER, backend=backend)
         # still not found, then the mouse is not plugged in, raise error
         if not mouse:
             raise RuntimeError(f"The specified mouse (PID:{WIRELESS_RECEIVER} or {WIRELESS_WIRED}) cannot be found.")
         # else we found the wired mouse, set wireless to False for waiting time
         else:
-            wireless = False
+            wireless = True
     # else we found the wireless mouse, set wireless to True for waiting time
     else:
-        wireless = True
+        wireless = False
 
     return [mouse, wireless]
 
@@ -96,7 +96,8 @@ def get_battery():
     # needed by PyUSB
     usb.util.dispose_resources(mouse)
     # if the mouse is wireless, need to wait before getting response
-    time.sleep(0.3305)
+    if wireless:
+        time.sleep(0.3305)
     # receive response
     result = mouse.ctrl_transfer(bmRequestType=0xa1, bRequest=0x01, wValue=0x300, data_or_wLength=90, wIndex=0x00)
     usb.util.dispose_resources(mouse)
