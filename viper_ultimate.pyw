@@ -1,12 +1,19 @@
 import time
 import logging
 import os
+import platform
+from pathlib import Path
 
 import usb.core
 import usb.util
 from usb.backend import libusb1
-from win10toast import ToastNotifier
 
+if os.name == "nt":
+    from win10toast import ToastNotifier
+    toaster = ToastNotifier()
+    notify = toaster.show_toast
+elif platform.system() == "Darwin":
+    ...
 # declare constants
 # 1. product ID
 # 0x0072 = Razer Mamba Wireless Receiver (i.e., 2.4GHz)
@@ -27,7 +34,7 @@ def get_mouse():
     (2) a boolean for stating if the mouse is in wireless state (True) or wired state (False)
     """
     # declare backend: libusb1.0
-    backend = libusb1.get_backend()
+    backend = libusb1.get_backend(find_library=lambda x:"/opt/homebrew/Cellar/libusb-compat/0.1.8/lib/libusb.dylib")
     # find the mouse by PyUSB
     mouse = usb.core.find(idVendor=0x1532, idProduct=WIRELESS_WIRED, backend=backend)
     # if the receiver is not found, mouse would be None
@@ -88,6 +95,9 @@ def get_battery():
     logging.info(f"Message sent to the mouse: {list(msg)}")
     # needed by PyUSB
     # if Linux, need to detach kernel driver
+    if mouse.is_kernel_driver_active(0) :
+        mouse.detach_kernel_driver(0)
+    
     mouse.set_configuration()
     usb.util.claim_interface(mouse, 0)
     # send request (battery), see razer_send_control_msg in razercommon.c in OpenRazer driver for detail
@@ -104,19 +114,37 @@ def get_battery():
     usb.util.release_interface(mouse, 0)
     logging.info(f"Message received from the mouse: {list(result)}")
     # the raw battery level is in 0 - 255, scale it to 100 for human, correct to 2 decimal places
+    
+    if not mouse.is_kernel_driver_active(0):
+        mouse.attach_kernel_driver(0)
     return result[9] / 255 * 100
+
+
+import asyncio
 
 class NoBatteryInfoFoundError(Exception):
     pass
 
-if __name__ == "__main__":
+async def main():
     for battery in get_battery():
         if battery:
             break
     logging.info(f"Battery level obtained: {battery:.2f}")
-    toaster = ToastNotifier()
-    icon_path = os.path.dirname(os.path.abspath(__file__))+r"\viper_ultimate.ico"
-    toaster.show_toast("Viper Ultimate Battery",
-                       f"{battery:.2f}% Battery Left",
-                       icon_path= icon_path,
-                       duration=530)
+    # toaster = ToastNotifier()
+    icon_path = Path(os.path.dirname(os.path.abspath(__file__))) / "viper_ultimate.ico"
+    print(icon_path)
+    # toaster.show_toast("Viper Ultimate Battery",
+                       # f"{battery:.2f}% Battery Left",
+                       # icon_path= icon_path,
+                       # duration=530)
+    from desktop_notifier import DesktopNotifier
+
+    notifier = DesktopNotifier()
+    await notifier.send(
+        title="Viper Ultimate Battery",
+        message=f"{battery:.2f}% Battery Left",
+        icon=icon_path,
+        timeout=60
+    )
+if __name__ == "__main__":
+    asyncio.run(main())
